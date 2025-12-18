@@ -72,3 +72,30 @@
 Скрипт работает в том же Docker-окружении и отражает статус всех `unit_tests`. Дополнительно вы можете запускать отдельные фильтры напрямую (`./build/tests/Debug/unit_tests.exe --gtest_filter=vector3.*`), если нужно сузить проверку.
 
 Если появятся вопросы по запуску, настройке Docker/WSL или ImGui — просто напиши, я помогу пройти каждый шаг.
+
+## Описание основных файлов и утилит
+
+- **Движок**  
+  - `src/main.cpp` — точка входа: инициализация COM/логгера/окна, загрузка сцены (два куба), обработка `ufps::Event`, движение камеры и рендер с `DebugUI`.  
+  - `src/core/camera.*` — камера от первого лица: матрицы вида/проекции, yaw/pitch, управление движением и данные для GPU.  
+  - `src/events/*` — события: `Event`-вариант, клавиатура (состояния `KeyState`, перевод в строки) и мышь, переводящие Win32-колбэки в `main`.  
+  - `src/graphics/` — рендеринг: буферы OpenGL (`buffer.*`, `persistent_buffer.*`, `multi_buffer.h`), manager-ы мешей/материалов, командный буфер, GLSL-шейдеры, сцена/сущности, окно/DebugUI с ImGui/ImGuizmo.  
+  - `src/maths/` — векторы, матрицы, кватернионы и `Transform`↔`Matrix4` преобразования.  
+  - `src/utils/` — общие утилиты: RAII (`AutoRelease`, `ComRelease`), `expect/ensure`, форматтер, логирование (консоль/файл), системная информация (WMI), перекодировка строк, `config.h`.
+
+- **Скрипты и сборка**  
+  - `scripts/run_tests.sh` — печатает русское описание наборов и вызывает `make tests`.  
+  - `Makefile`/`mingw_toolchain.cmake`/`Dockerfile` — строят Docker-образ с Mingw/GCC, конфигурируют CMake+Ninja, собирают/пакуют `ufps`, запускают `unit_tests`.  
+  - `.github/workflows/*` — CI: кросс-компиляция, Windows-тесты, bump версии, релизы с Discord-уведомлением.  
+  - `.github/actions/discord-notify/action.yaml` — вспомогательный Action, отправляющий уведомления в Discord по webhook.  
+
+- **Тесты**  
+  - `tests/CMakeLists.txt` собирает `unit_tests`, которые покрывают:
+    * `tests/vector3_tests.cpp`
+    * `tests/matrix4_tests.cpp`
+    * `tests/multi_buffer_tests.cpp`
+    * `tests/formatter_tests.cpp`
+    * `tests/error_tests.cpp`
+    * `tests/auto_release_tests.cpp`
+
+  Эту секцию можно использовать как справочник, когда нужно понять, за что отвечает каждый модуль и где искать пример его использования.
