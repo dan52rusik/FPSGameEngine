@@ -1,51 +1,64 @@
-# μfps
+# μfps / FPSGameEngine
 
-A small FPS game written in modern C++ and OpenGL, from scratch, live.
+Небольшой шутер от первого лица, написанный на современном C++ и OpenGL с нуля. Всю разработку можно наблюдать в прямом эфире, но можно и просто собрать локально, используя Docker и WSL.
 
-Feel free to join us on [Discord](https://discord.gg/9FkkMgXSUV) to discuss the project.
+## Быстрый старт
 
-## "From Scratch"
+1. Обновите WSL и запустите выбранный дистрибутив (например, Ubuntu):
+   ```bash
+   wsl --update
+   wsl -d Ubuntu
+   ```
+2. Внутри WSL убедитесь, что есть `make`, `cmake` и `docker` (через интеграцию Docker Desktop):
+   ```bash
+   sudo apt update
+   sudo apt install -y build-essential cmake ninja
+   ```
+3. Перейдите в проект, соберите образ и настройте его:
+   ```bash
+   cd /mnt/c/MyGames/FPSGameEngine
+   make docker-image    # выполняется один раз на машине
+   make config          # генерирует CMake + Ninja
+   ```
+4. Соберите и запустите игру:
+   ```bash
+   make run             # сборка Debug и запуск ufps.exe
+   ```
+5. Для проверки можно отдельно собирать или запускать тесты:
+   ```bash
+   make build
+   make tests
+   ```
 
-Where possible we will be building everything from scratch. This includes: maths, windowing, rendering, etc
+Если хотите контролировать сборки из PowerShell, используйте `wsl` или `bash` и запускайте те же команды внутри `/mnt/c/MyGames/FPSGameEngine`.
 
-The few concessions I'm willing to make are:
-- File format parsing (e.g. loading images, models)
-- Physics (too complex for a small project like this)
-- Lua scripting (although we will be writing our own bindings)
+## Структура проекта
 
-## Live
+- `docker-image` — настраивает контейнер с Mingw-w64 тулчейнами и зависимостями (Imgui/ImGuizmo, OpenGL).  
+- `make config` (`make` → `config`) создаёт `build/` и подключает `mingw_toolchain.cmake`.  
+- `src/main.cpp` инициализирует окно, красит лог, добавляет два куба и слушает клавиатуру/мышь через `events`.  
+- `src/graphics/debug_ui.*` рендерит ImGui/ImGuizmo: выбор сущностей, цвет, gizmo для трансформов, обработка клика.  
+- Логирование из `ufps::log` теперь выводит информацию/ошибки на русском языке и пишет системную информацию.
 
-I'll be streaming the development live:
-- [Twitch](https://www.twitch.tv/nathan_baggs)
-- [YouTube](https://www.youtube.com/@nathanbaggs)
+## Управление и взаимодействие
 
-My plan is to do the bulk of the development live, and then do some polishing and tidying up off-stream.
+- **W/A/S/D** — движение камеры вперёд, влево, назад, вправо (Q/E поднимаются/опускаются).  
+- **Мышь** — вращает камеру по горизонтали/вертикали (когда `debug_mode == false`).  
+- **F1** — переключает режим отладки: появляется ImGui-панель (справа от игры), где можно редактировать цвет и использовать ImGuizmo для перемещения, масштабирования и вращения кубов.  
+- **ESC** — закрыть игру.  
+- Когда `debug_mode` включён, курсор фиксируется на UI и события мыши передаются в ImGui (`DebugUI::add_mouse_event`).
 
-## Building
+## Запись и логирование
 
-Feel free to try and build project yourself, but I won't be distributing any assets I don't have the license for.
+- `utils/system_info.cpp` собирает строку с ОС, видеокартой, драйвером и памятью и выводит её через `ufps::log::info`.  
+- `graphics/window.cpp` логирует DPI/размеры окна и данные OpenGL.  
+- `graphics/utils.h` пишет про перераспределение GPU-буферов.  
+- `debug_ui.cpp` выводит также цвет выбранного пикселя `glReadPixels` (для отладки попаданий по кубам).
 
-The build system is Dockerised and you can use the top level Makefile
+## Готово? Что дальше
 
-```bash
-# build the docker image (one off)
-make docker-image
+1. Нажмите `make run` и в окне нажмите `F1`, чтобы открыть ImGui и настроить кубы.  
+2. Если нужно, измените или добавьте новые сущности в `src/main.cpp` (функция `cube()` создаёт геометрию).  
+3. После изменений `git add . && git commit -m "описание"` и `git push` (напоминаю, для пуша нужны PAT с `repo` и `workflow`, если изменялись `.github/workflows`).  
 
-# configure the project
-make configure
-
-# build and run the game
-make run
-
-# (optional build without running)
-make build
-
-# run tests
-make tests
-```
-
-## Contributing
-
-I am not currently accepting contributions, but feel free to fork the project and make your own changes.
-# FPSGameEngine
-# FPSGameEngine
+Если появятся вопросы по запуску, настройке Docker/WSL или ImGui — просто напиши, я помогу пройти каждый шаг.
