@@ -13,15 +13,6 @@ run: build
 	./build/src/Debug/ufps.exe
 
 tests: build
-	@printf '%s\n' \
-		"Запуск тестов: краткая расшифровка наборов перед выполнением" \
-		"- vector3.*      : проверка операций с векторами (конструкторы, арифметика, форматирование)." \
-		"- matrix4.*      : математика матриц (identity, look-at, perspective, умножения)." \
-		"- multi_frame.*  : разные сценарии записи в мульти-буфер." \
-		"- formatter.*    : текстовое форматирование и утилиты." \
-		"- error.*        : проверки макросов expect/ensure с трассировкой." \
-		"- auto_release.* : проверка AutoRelease и его удалителей." \
-		"Запуск реальных тестов ..."
 	./build/tests/Debug/unit_tests.exe --gtest_color=yes
 
 pack: build

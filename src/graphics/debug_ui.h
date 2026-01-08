@@ -2,8 +2,9 @@
 
 #include <optional>
 
+#include "core/entity.h"
+#include "core/scene.h"
 #include "events/mouse_button_event.h"
-#include "graphics/scene.h"
 #include "graphics/window.h"
 
 namespace ufps
@@ -22,6 +23,7 @@ class DebugUI
   private:
     const Window &window_;
     std::optional<MouseButtonEvent> click_;
+    const Entity *selected_entity_;
 };
 
 }

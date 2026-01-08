@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.22)
 
 project(
   ufps
-  VERSION "0.0.15"
+  VERSION "0.0.18"
   DESCRIPTION "a sweet fps game"
   LANGUAGES C CXX
 )
@@ -34,6 +34,12 @@ FetchContent_Declare(
 	GIT_REPOSITORY https://github.com/CedricGuillemet/ImGuizmo
 	GIT_TAG df1c301)
 FetchContent_MakeAvailable(imguizmo)
+
+FetchContent_Declare(
+	stb_lib
+	GIT_REPOSITORY https://github.com/nothings/stb.git
+	GIT_TAG 5c205738c191bcb0abc65c4febfa9bd25ff35234)
+FetchContent_MakeAvailable(stb_lib)
 
 add_subdirectory(src)
 

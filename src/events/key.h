@@ -79,10 +79,10 @@ inline auto to_string(Key obj) -> std::string
         case Y: return "Y";
         case Z: return "Z";
         case F1: return "F1";
-        case SPACE: return "SPACE";
+        case SPACE: return "\u041f\u0420\u041e\u0411\u0415\u041b";
     }
 
-    return "?";
+    return "<\u043d\u0435\u0438\u0437\u0432\u0435\u0441\u0442\u043d\u043e>";
 }
 
 inline auto to_string(KeyState obj) -> std::string
@@ -90,9 +90,9 @@ inline auto to_string(KeyState obj) -> std::string
     switch (obj)
     {
         using enum ufps::KeyState;
-        case UP: return "UP";
-        case DOWN: return "DOWN";
-        default: return "UNKNOWN STATE";
+        case UP: return "\u041e\u0422\u041f\u0423\u0429\u0415\u041d\u0410";
+        case DOWN: return "\u041d\u0410\u0416\u0410\u0422\u0410";
+        default: return "\u041d\u0415\u0418\u0417\u0412\u0415\u0421\u0422\u041d\u041e\u0415 \u0421\u041e\u0421\u0422\u041e\u042f\u041d\u0418\u0415";
     }
 }
 

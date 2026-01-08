@@ -11,20 +11,46 @@
 #include <backends/imgui_impl_opengl3.h>
 #include <backends/imgui_impl_win32.h>
 
+#include "core/scene.h"
 #include "events/mouse_button_event.h"
 #include "graphics/opengl.h"
-#include "graphics/scene.h"
 #include "graphics/window.h"
 #include "maths/matrix4.h"
-#include "third_party/opengl/glext.h"
+#include "maths/ray.h"
+#include "maths/vector4.h"
 #include "utils/log.h"
+
+namespace
+{
+
+auto screen_ray(const ufps::MouseButtonEvent &evt, const ufps::Window &window, const ufps::Camera &camera) -> ufps::Ray
+{
+    const auto x = 2.0f * evt.x() / window.render_width() - 1.0f;
+    const auto y = 1.0f - 2.0f * evt.y() / window.render_height();
+    const auto ray_clip = ufps::Vector4{x, y, -1.0f, 1.0f};
+
+    const auto inv_proj = ufps::Matrix4::invert(camera.data().projection);
+    auto ray_eye = inv_proj * ray_clip;
+    ray_eye.z = -1.0f;
+    ray_eye.w = 0.0f;
+    // ray_eye = ufps::Vector4{ray_eye.x, ray_eye.y, -1.0f, 0.0f};
+
+    const auto inv_view = ufps::Matrix4::invert(camera.data().view);
+    const auto dir_ws = ufps::Vector3::normalise(ufps::Vector3{inv_view * ray_eye});
+    const auto origin_ws = ufps::Vector3{inv_view[12], inv_view[13], inv_view[14]};
+
+    return {origin_ws, dir_ws};
+}
+
+}
 
 namespace ufps
 {
 DebugUI::DebugUI(const Window &window)
     : window_{window}
+    , click_{}
+    , selected_entity_{}
 {
-    // Настраиваем контекст ImGui, включая управление клавиатурой и курсором
     IMGUI_CHECKVERSION();
     ::ImGui::CreateContext();
     auto &io = ::ImGui::GetIO();
@@ -34,6 +60,12 @@ DebugUI::DebugUI(const Window &window)
     ::ShowCursor(true);
     io.MouseDrawCursor = io.WantCaptureMouse;
 
+    io.Fonts->AddFontFromFileTTF(
+        "C:\\Windows\\Fonts\\segoeui.ttf",
+        16.0f,
+        nullptr,
+        io.Fonts->GetGlyphRangesCyrillic());
+
     ::ImGui::StyleColorsDark();
 
     ::ImGui_ImplWin32_InitForOpenGL(window.native_handle());
@@ -42,7 +74,6 @@ DebugUI::DebugUI(const Window &window)
 
 DebugUI::~DebugUI()
 {
-    // Корректно освобождаем ресурсы ImGui/ImGuizmo
     ::ImGui_ImplOpenGL3_Shutdown();
     ::ImGui_ImplWin32_Shutdown();
     ::ImGui::DestroyContext();
@@ -50,7 +81,6 @@ DebugUI::~DebugUI()
 
 auto DebugUI::render(Scene &scene) -> void
 {
-    // Начинаем новый кадр ImGui/ImGuizmo, чтобы можно было отрисовать отладочный интерфейс
     auto &io = ::ImGui::GetIO();
 
     ::ImGui_ImplOpenGL3_NewFrame();
@@ -62,8 +92,7 @@ auto DebugUI::render(Scene &scene) -> void
     ::ImGuizmo::Enable(true);
     ::ImGuizmo::SetRect(0, 0, io.DisplaySize.x, io.DisplaySize.y);
 
-    // Показываем базовые показатели
-    ::ImGui::LabelText("FPS", "%0.1f", io.Framerate);
+    ::ImGui::LabelText("\u041a\u0430\u0434\u0440\u044b/\u0441\u0435\u043a", "%0.1f", io.Framerate);
 
     for (auto &entity : scene.entities)
     {
@@ -74,13 +103,16 @@ auto DebugUI::render(Scene &scene) -> void
             float colour[3]{};
             std::memcpy(colour, &material.colour, sizeof(colour));
 
-            const auto label = std::format("{} colour", entity.name);
+            const auto label = std::format("{} \u0446\u0432\u0435\u0442", entity.name);
 
             if (::ImGui::ColorPicker3(label.c_str(), colour))
             {
                 std::memcpy(&material.colour, colour, sizeof(colour));
             }
+        }
 
+        if (&entity == selected_entity_)
+        {
             auto transform = Matrix4{entity.transform};
             const auto &camera_data = scene.camera.data();
 
@@ -95,41 +127,49 @@ auto DebugUI::render(Scene &scene) -> void
                 nullptr,
                 nullptr);
 
-            // Применяем манипуляции обратно к трансформу сущности
             entity.transform = Transform{transform};
         }
     }
+
+    ::ImGui::Begin("\u0416\u0443\u0440\u043d\u0430\u043b");
+
+    ::ImGui::BeginChild("\u0412\u044b\u0432\u043e\u0434 \u0436\u0443\u0440\u043d\u0430\u043b\u0430");
+    for (const auto &line : log::history)
+    {
+        switch (line[1])
+        {
+            case 'D': ::ImGui::TextColored({0.0f, 0.5f, 1.0f, 1.0f}, "%s", line.c_str()); break;
+            case 'I': ::ImGui::TextColored({1.0f, 1.0f, 1.0f, 1.0f}, "%s", line.c_str()); break;
+            case 'W': ::ImGui::TextColored({1.0f, 1.0f, 0.0f, 1.0f}, "%s", line.c_str()); break;
+            case 'E': ::ImGui::TextColored({1.0f, 0.0f, 0.0f, 1.0f}, "%s", line.c_str()); break;
+            default: ::ImGui::TextColored({1.0f, 0.412f, 0.706f, 1.0f}, "%s", line.c_str()); break;
+        }
+    }
+    ::ImGui::EndChild();
+
+    ::ImGui::End();
 
     ::ImGui::Render();
     ::ImGui_ImplOpenGL3_RenderDrawData(::ImGui::GetDrawData());
 
     if (click_)
     {
-        std::uint8_t buffer[4]{};
+        const auto pick_ray = screen_ray(*click_, window_, scene.camera);
+        const auto intersection = scene.intersect_ray(pick_ray);
+        selected_entity_ = intersection.transform([](const auto &e) { return e.entity; }).value_or(nullptr);
 
-        ::glBindFramebuffer(GL_READ_FRAMEBUFFER, 0);
-        ::glReadBuffer(GL_BACK);
-        ::glReadPixels(
-            static_cast<::GLint>(click_->x()),
-            static_cast<::GLint>(click_->y()),
-            1,
-            1,
-            GL_RGBA,
-            GL_UNSIGNED_BYTE,
-            buffer);
-
-        // Подробный вывод выбранного пикселя, чтобы видеть читаемый RGB сразу
-        log::debug("выбранный цвет r: {:x} g: {:x} b: {:x}", buffer[0], buffer[1], buffer[2]);
         click_.reset();
     }
 }
 
 auto DebugUI::add_mouse_event(const MouseButtonEvent &evt) -> void
 {
-    // Перенаправляем события мыши в ImGui, чтобы можно было кликом взаимодействовать с интерфейсом
     auto &io = ::ImGui::GetIO();
     io.AddMouseButtonEvent(0, evt.state() == MouseButtonState::DOWN);
 
-    click_ = evt;
+    if (!io.WantCaptureMouse)
+    {
+        click_ = evt;
+    }
 }
 }

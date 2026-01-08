@@ -26,7 +26,7 @@ PersistentBuffer::PersistentBuffer(std::size_t size, std::string_view name)
 
 auto PersistentBuffer::write(DataBufferView data, std::size_t offset) const -> void
 {
-    expect(size_ >= data.size_bytes() + offset, "buffer too small");
+    expect(size_ >= data.size_bytes() + offset, "\u0431\u0443\u0444\u0435\u0440 \u0441\u043b\u0438\u0448\u043a\u043e\u043c \u043c\u0430\u043b");
     std::memcpy(reinterpret_cast<std::byte *>(map_) + offset, data.data(), data.size_bytes());
 }
 

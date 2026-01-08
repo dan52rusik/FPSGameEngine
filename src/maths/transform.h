@@ -106,7 +106,11 @@ class Transform
 
 inline auto to_string(const Transform &transform) -> std::string
 {
-    return std::format("pos:{}, scale:{}, rot:{}", transform.position, transform.scale, transform.rotation);
+    return std::format(
+        "\u043f\u043e\u0437\u0438\u0446\u0438\u044f:{}, \u043c\u0430\u0441\u0448\u0442\u0430\u0431:{}, \u043f\u043e\u0432\u043e\u0440\u043e\u0442:{}",
+        transform.position,
+        transform.scale,
+        transform.rotation);
 }
 
 };

@@ -6,10 +6,10 @@
 #include <ranges>
 #include <string>
 
+#include "core/scene.h"
 #include "graphics/multi_buffer.h"
 #include "graphics/opengl.h"
 #include "graphics/persistent_buffer.h"
-#include "graphics/scene.h"
 #include "graphics/utils.h"
 #include "utils/log.h"
 
@@ -80,7 +80,7 @@ auto CommandBuffer::offset_bytes() const -> std::size_t
 
 auto CommandBuffer::to_string() const -> std::string
 {
-    return std::format("command buffer {} size", command_buffer_.size());
+    return std::format("\u043a\u043e\u043c\u0430\u043d\u0434\u043d\u044b\u0439 \u0431\u0443\u0444\u0435\u0440 {} \u0440\u0430\u0437\u043c\u0435\u0440", command_buffer_.size());
 }
 
 }

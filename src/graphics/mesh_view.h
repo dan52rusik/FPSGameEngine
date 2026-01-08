@@ -1,6 +1,9 @@
 #pragma once
 
 #include <cstdint>
+#include <span>
+
+#include "graphics/vertex_data.h"
 
 namespace ufps
 {

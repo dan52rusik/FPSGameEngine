@@ -35,11 +35,11 @@ Wmi::Wmi()
     ensure(
         ::CoCreateInstance(CLSID_WbemLocator, 0, CLSCTX_INPROC_SERVER, IID_IWbemLocator, std::out_ptr(locator_)) ==
             S_OK,
-        "failed to create locator");
+        "\u043d\u0435 \u0443\u0434\u0430\u043b\u043e\u0441\u044c \u0441\u043e\u0437\u0434\u0430\u0442\u044c WMI-\u043b\u043e\u043a\u0430\u0442\u043e\u0440");
 
     ensure(
         locator_->ConnectServer(_bstr_t(L"root\\CIMV2"), nullptr, nullptr, 0, 0, 0, 0, std::out_ptr(services_)) == S_OK,
-        "failed to create services");
+        "\u043d\u0435 \u0443\u0434\u0430\u043b\u043e\u0441\u044c \u0441\u043e\u0437\u0434\u0430\u0442\u044c WMI-\u0441\u0435\u0440\u0432\u0438\u0441\u044b");
 
     ensure(
         ::CoSetProxyBlanket(
@@ -51,7 +51,7 @@ Wmi::Wmi()
             RPC_C_IMP_LEVEL_IMPERSONATE,
             nullptr,
             EOAC_NONE) == S_OK,
-        "failed to set blanket");
+        "\u043d\u0435 \u0443\u0434\u0430\u043b\u043e\u0441\u044c \u043d\u0430\u0441\u0442\u0440\u043e\u0438\u0442\u044c \u0431\u0435\u0437\u043e\u043f\u0430\u0441\u043d\u043e\u0441\u0442\u044c WMI");
 }
 
 auto Wmi::query(const std::string &wql, const std::string &property_name) const -> std::vector<std::string>
@@ -65,7 +65,7 @@ auto Wmi::query(const std::string &wql, const std::string &property_name) const 
             WBEM_FLAG_FORWARD_ONLY | WBEM_FLAG_RETURN_IMMEDIATELY,
             nullptr,
             std::out_ptr(enumerator)) == S_OK,
-        "failed to execute query: {}",
+        "\u043d\u0435 \u0443\u0434\u0430\u043b\u043e\u0441\u044c \u0432\u044b\u043f\u043e\u043b\u043d\u0438\u0442\u044c \u0437\u0430\u043f\u0440\u043e\u0441: {}",
         wql);
 
     auto obj = std::unique_ptr<::IWbemClassObject, ComRelease>{};

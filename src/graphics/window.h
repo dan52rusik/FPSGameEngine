@@ -18,9 +18,6 @@ enum class WindowMode
     WINDOWED
 };
 
-/**
- * Represents an actual windows window.
- */
 class Window
 {
   public:
@@ -30,7 +27,8 @@ class Window
         std::uint32_t height,
         std::uint32_t x,
         std::uint32_t y,
-        bool mouse_locked = false);
+        bool mouse_locked = true);
+
     ~Window() = default;
 
     Window(const Window &) = delete;
@@ -41,19 +39,24 @@ class Window
 
     auto pump_event() const -> std::optional<Event>;
     auto swap() const -> void;
+
     auto native_handle() const -> HWND;
+
     auto render_width() const -> std::uint32_t;
     auto render_height() const -> std::uint32_t;
+
     auto window_width() const -> std::uint32_t;
     auto window_height() const -> std::uint32_t;
+
     auto set_title(const std::string &title) const -> void;
+
     auto mode() const -> WindowMode;
     auto set_mode(WindowMode mode) -> void;
 
   private:
-    AutoRelease<::HWND, nullptr> window_;
-    AutoRelease<::HDC> dc_;
-    ::WNDCLASSA wc_;
+    AutoRelease<HWND> window_;
+    AutoRelease<HDC> dc_;
+    WNDCLASSW wc_;
     std::uint32_t width_;
     std::uint32_t height_;
     WindowMode mode_;
@@ -65,9 +68,9 @@ inline auto to_string(WindowMode mode) -> std::string
     switch (mode)
     {
         using enum WindowMode;
-        case FULLSCREEN: return "FULLSCREEN";
-        case WINDOWED: return "WINDOWED";
-        default: return "<UNKNOWN>";
+        case FULLSCREEN: return "\u041f\u041e\u041b\u041d\u041e\u042d\u041a\u0420\u0410\u041d\u041d\u042b\u0419";
+        case WINDOWED: return "\u041e\u041a\u041e\u041d\u041d\u042b\u0419";
+        default: return "<\u041d\u0415\u0418\u0417\u0412\u0415\u0421\u0422\u041d\u041e>";
     }
 }
 

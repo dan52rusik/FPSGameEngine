@@ -49,10 +49,22 @@ auto MeshManager::native_handle() const -> std::tuple<::GLuint, ::GLuint>
     return {vertex_data_gpu_.native_handle(), index_data_gpu_.native_handle()};
 }
 
+auto MeshManager::index_data(MeshView view) -> std::span<std::uint32_t>
+{
+    return {index_data_cpu_.data() + view.index_offset, view.index_count};
+}
+
+auto MeshManager::vertex_data(MeshView view) -> std::span<VertexData>
+{
+    return {vertex_data_cpu_.data() + view.vertex_offset, view.vertex_count};
+}
+
 auto MeshManager::to_string() const -> std::string
 {
     return std::format(
-        "mesh manager: vertex count: {} index count: {}", vertex_data_cpu_.size(), index_data_cpu_.size());
+        "\u043c\u0435\u043d\u0435\u0434\u0436\u0435\u0440 \u043c\u0435\u0448\u0435\u0439: \u0432\u0435\u0440\u0448\u0438\u043d: {} \u0438\u043d\u0434\u0435\u043a\u0441\u043e\u0432: {}",
+        vertex_data_cpu_.size(),
+        index_data_cpu_.size());
 }
 
 }

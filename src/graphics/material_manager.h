@@ -74,7 +74,10 @@ class MaterialManager
     auto operator[](MaterialKey key) -> MaterialData &
     {
         const auto element = material_data_cpu_.find(key);
-        expect(element != std::ranges::cend(material_data_cpu_), "key {} does not exist", key);
+        expect(
+            element != std::ranges::cend(material_data_cpu_),
+            "\u043a\u043b\u044e\u0447 {} \u043d\u0435 \u0441\u0443\u0449\u0435\u0441\u0442\u0432\u0443\u0435\u0442",
+            key);
 
         return element->second;
     }
@@ -87,7 +90,10 @@ class MaterialManager
     auto index(MaterialKey key) -> std::uint32_t
     {
         const auto element = material_data_cpu_.find(key);
-        expect(element != std::ranges::cend(material_data_cpu_), "could not find key: {}", key);
+        expect(
+            element != std::ranges::cend(material_data_cpu_),
+            "\u043d\u0435 \u0443\u0434\u0430\u043b\u043e\u0441\u044c \u043d\u0430\u0439\u0442\u0438 \u043a\u043b\u044e\u0447: {}",
+            key);
 
         return static_cast<std::uint32_t>(std::ranges::distance(std::ranges::cbegin(material_data_cpu_), element));
     }

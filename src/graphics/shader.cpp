@@ -22,7 +22,7 @@ auto to_native(ufps::ShaderType type) -> ::GLenum
         case FRAGMENT: return GL_FRAGMENT_SHADER;
     }
 
-    throw ufps::Exception("unknown shader type: {}", std::to_underlying(type));
+    throw ufps::Exception("\u043d\u0435\u0438\u0437\u0432\u0435\u0441\u0442\u043d\u044b\u0439 \u0442\u0438\u043f \u0448\u0435\u0439\u0434\u0435\u0440\u0430: {}", std::to_underlying(type));
 }
 }
 
@@ -49,7 +49,7 @@ Shader::Shader(std::string_view source, ShaderType type, std::string_view name)
         char log[512];
         ::glGetShaderInfoLog(handle_, sizeof(log), nullptr, log);
 
-        ensure(result, "failed to compile shader {} {}\n{}", type_, name, log);
+        ensure(result, "\u043d\u0435 \u0443\u0434\u0430\u043b\u043e\u0441\u044c \u0441\u043a\u043e\u043c\u043f\u0438\u043b\u0438\u0440\u043e\u0432\u0430\u0442\u044c \u0448\u0435\u0439\u0434\u0435\u0440 {} {}\n{}", type_, name, log);
     }
 }
 
@@ -72,6 +72,6 @@ auto to_string(ShaderType obj) -> std::string
         case FRAGMENT: return "FRAGMENT";
     }
 
-    throw ufps::Exception("unknown shader type: {}", std::to_underlying(obj));
+    throw ufps::Exception("\u043d\u0435\u0438\u0437\u0432\u0435\u0441\u0442\u043d\u044b\u0439 \u0442\u0438\u043f \u0448\u0435\u0439\u0434\u0435\u0440\u0430: {}", std::to_underlying(obj));
 }
 }

@@ -22,6 +22,7 @@
 #include "utils/error.h"
 #include "utils/exception.h"
 #include "utils/formatter.h"
+#include "utils/text_utils.h"
 
 namespace
 {
@@ -69,7 +70,7 @@ auto CALLBACK window_proc(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lParam) -> 
                 ::GetRawInputData(
                     reinterpret_cast<::HRAWINPUT>(lParam), RID_INPUT, &raw, &dwSize, sizeof(::RAWINPUTHEADER)) !=
                     static_cast<::UINT>(-1),
-                "failed to get raw input");
+                "\u043d\u0435 \u0443\u0434\u0430\u043b\u043e\u0441\u044c \u043f\u043e\u043b\u0443\u0447\u0438\u0442\u044c RAW-\u0432\u0432\u043e\u0434");
 
             if (raw.header.dwType == RIM_TYPEMOUSE)
             {
@@ -108,7 +109,7 @@ template <class T>
 auto resolve_gl_function(T &function, const std::string &name) -> void
 {
     const auto address = ::wglGetProcAddress(name.c_str());
-    ufps::ensure(address != nullptr, "could not resolve {}", name);
+    ufps::ensure(address != nullptr, "\u043d\u0435 \u0443\u0434\u0430\u043b\u043e\u0441\u044c \u0440\u0430\u0437\u0440\u0435\u0448\u0438\u0442\u044c {}", name);
 
     std::memcpy(std::addressof(function), &address, sizeof(T));
 }
@@ -122,7 +123,7 @@ auto resolve_wgl_functions(::HINSTANCE instance) -> void
     wc.lpszClassName = "dummy window";
 
     const auto clazz = ::RegisterClassA(&wc);
-    ufps::ensure(clazz != 0, "could not register dummy window");
+    ufps::ensure(clazz != 0, "\u043d\u0435 \u0443\u0434\u0430\u043b\u043e\u0441\u044c \u0437\u0430\u0440\u0435\u0433\u0438\u0441\u0442\u0440\u0438\u0440\u043e\u0432\u0430\u0442\u044c \u0432\u0440\u0435\u043c\u0435\u043d\u043d\u043e\u0435 \u043e\u043a\u043d\u043e");
 
     auto dummy_window = ufps::AutoRelease<::HWND>{
         ::CreateWindowExA(
@@ -140,11 +141,11 @@ auto resolve_wgl_functions(::HINSTANCE instance) -> void
             0),
         ::DestroyWindow};
 
-    ufps::ensure(dummy_window, "could not create dummy window");
+    ufps::ensure(dummy_window, "\u043d\u0435 \u0443\u0434\u0430\u043b\u043e\u0441\u044c \u0441\u043e\u0437\u0434\u0430\u0442\u044c \u0432\u0440\u0435\u043c\u0435\u043d\u043d\u043e\u0435 \u043e\u043a\u043d\u043e");
 
     auto dc =
         ufps::AutoRelease<HDC>{::GetDC(dummy_window), [&dummy_window](auto dc) { ::ReleaseDC(dummy_window, dc); }};
-    ufps::ensure(dc, "could not get dummy dc");
+    ufps::ensure(dc, "\u043d\u0435 \u0443\u0434\u0430\u043b\u043e\u0441\u044c \u043f\u043e\u043b\u0443\u0447\u0438\u0442\u044c DC \u0432\u0440\u0435\u043c\u0435\u043d\u043d\u043e\u0433\u043e \u043e\u043a\u043d\u0430");
 
     auto pfd = ::PIXELFORMATDESCRIPTOR{};
     pfd.nSize = sizeof(::PIXELFORMATDESCRIPTOR);
@@ -158,19 +159,19 @@ auto resolve_wgl_functions(::HINSTANCE instance) -> void
     pfd.iLayerType = PFD_MAIN_PLANE;
 
     auto pixel_format = ::ChoosePixelFormat(dc, &pfd);
-    ufps::ensure(pixel_format != 0, "failed to choose pixel format");
+    ufps::ensure(pixel_format != 0, "\u043d\u0435 \u0443\u0434\u0430\u043b\u043e\u0441\u044c \u0432\u044b\u0431\u0440\u0430\u0442\u044c \u0444\u043e\u0440\u043c\u0430\u0442 \u043f\u0438\u043a\u0441\u0435\u043b\u0435\u0439");
 
-    ufps::ensure(::SetPixelFormat(dc, pixel_format, &pfd) == TRUE, "failed to set pixel format");
+    ufps::ensure(::SetPixelFormat(dc, pixel_format, &pfd) == TRUE, "\u043d\u0435 \u0443\u0434\u0430\u043b\u043e\u0441\u044c \u0443\u0441\u0442\u0430\u043d\u043e\u0432\u0438\u0442\u044c \u0444\u043e\u0440\u043c\u0430\u0442 \u043f\u0438\u043a\u0441\u0435\u043b\u0435\u0439");
 
     const auto context = ufps::AutoRelease<HGLRC>{::wglCreateContext(dc), ::wglDeleteContext};
-    ufps::ensure(context, "failed to create wgl context");
+    ufps::ensure(context, "\u043d\u0435 \u0443\u0434\u0430\u043b\u043e\u0441\u044c \u0441\u043e\u0437\u0434\u0430\u0442\u044c WGL-\u043a\u043e\u043d\u0442\u0435\u043a\u0441\u0442");
 
-    ufps::ensure(::wglMakeCurrent(dc, context) == TRUE, "could not make current context");
+    ufps::ensure(::wglMakeCurrent(dc, context) == TRUE, "\u043d\u0435 \u0443\u0434\u0430\u043b\u043e\u0441\u044c \u0441\u0434\u0435\u043b\u0430\u0442\u044c \u043a\u043e\u043d\u0442\u0435\u043a\u0441\u0442 \u0442\u0435\u043a\u0443\u0449\u0438\u043c");
 
     resolve_gl_function(wglCreateContextAttribsARB, "wglCreateContextAttribsARB");
     resolve_gl_function(wglChoosePixelFormatARB, "wglChoosePixelFormatARB");
 
-    ufps::ensure(::wglMakeCurrent(dc, 0) == TRUE, "could not unbind context");
+    ufps::ensure(::wglMakeCurrent(dc, 0) == TRUE, "\u043d\u0435 \u0443\u0434\u0430\u043b\u043e\u0441\u044c \u043e\u0442\u0432\u044f\u0437\u0430\u0442\u044c \u043a\u043e\u043d\u0442\u0435\u043a\u0441\u0442");
 }
 
 auto init_opengl(HDC dc) -> void
@@ -202,11 +203,13 @@ auto init_opengl(HDC dc) -> void
     auto num_formats = UINT{};
 
     ::wglChoosePixelFormatARB(dc, pixel_format_attribs, 0, 1, &pixel_format, &num_formats);
-    ufps::ensure(num_formats != 0u, "failed to choose a pixel format");
+    ufps::ensure(num_formats != 0u, "\u043d\u0435 \u0443\u0434\u0430\u043b\u043e\u0441\u044c \u0432\u044b\u0431\u0440\u0430\u0442\u044c \u0444\u043e\u0440\u043c\u0430\u0442 \u043f\u0438\u043a\u0441\u0435\u043b\u0435\u0439");
 
     auto pfd = ::PIXELFORMATDESCRIPTOR{};
-    ufps::ensure(::DescribePixelFormat(dc, pixel_format, sizeof(pfd), &pfd) != 0, "failed to describe pixel format");
-    ufps::ensure(::SetPixelFormat(dc, pixel_format, &pfd) == TRUE, "failed to set pixel format");
+    ufps::ensure(
+        ::DescribePixelFormat(dc, pixel_format, sizeof(pfd), &pfd) != 0,
+        "\u043d\u0435 \u0443\u0434\u0430\u043b\u043e\u0441\u044c \u043e\u043f\u0438\u0441\u0430\u0442\u044c \u0444\u043e\u0440\u043c\u0430\u0442 \u043f\u0438\u043a\u0441\u0435\u043b\u0435\u0439");
+    ufps::ensure(::SetPixelFormat(dc, pixel_format, &pfd) == TRUE, "\u043d\u0435 \u0443\u0434\u0430\u043b\u043e\u0441\u044c \u0443\u0441\u0442\u0430\u043d\u043e\u0432\u0438\u0442\u044c \u0444\u043e\u0440\u043c\u0430\u0442 \u043f\u0438\u043a\u0441\u0435\u043b\u0435\u0439");
 
     int gl_attribs[]{
         WGL_CONTEXT_MAJOR_VERSION_ARB,
@@ -219,9 +222,9 @@ auto init_opengl(HDC dc) -> void
     };
 
     auto context = ::wglCreateContextAttribsARB(dc, 0, gl_attribs);
-    ufps::ensure(context != nullptr, "failed to create wgl context");
+    ufps::ensure(context != nullptr, "\u043d\u0435 \u0443\u0434\u0430\u043b\u043e\u0441\u044c \u0441\u043e\u0437\u0434\u0430\u0442\u044c WGL-\u043a\u043e\u043d\u0442\u0435\u043a\u0441\u0442");
 
-    ufps::ensure(::wglMakeCurrent(dc, context) == TRUE, "failed to make current context");
+    ufps::ensure(::wglMakeCurrent(dc, context) == TRUE, "\u043d\u0435 \u0443\u0434\u0430\u043b\u043e\u0441\u044c \u0441\u0434\u0435\u043b\u0430\u0442\u044c \u043a\u043e\u043d\u0442\u0435\u043a\u0441\u0442 \u0442\u0435\u043a\u0443\u0449\u0438\u043c");
 }
 
 auto resolve_global_gl_functions() -> void
@@ -245,7 +248,7 @@ auto get_monitor_info(::HWND window) -> ::MONITORINFO
 
     ufps::ensure(
         ::GetMonitorInfo(::MonitorFromWindow(window, MONITOR_DEFAULTTOPRIMARY), &mi) != 0,
-        "could not get monitor info: {}",
+        "\u043d\u0435 \u0443\u0434\u0430\u043b\u043e\u0441\u044c \u043f\u043e\u043b\u0443\u0447\u0438\u0442\u044c \u0438\u043d\u0444\u043e\u0440\u043c\u0430\u0446\u0438\u044e \u043e \u043c\u043e\u043d\u0438\u0442\u043e\u0440\u0435: {}",
         ::GetLastError());
 
     return mi;
@@ -270,29 +273,32 @@ Window::Window(
     , mode_{mode}
     , mouse_locked_{mouse_locked}
 {
-    wc_ = ::WNDCLASS{
+    const auto class_name = L"ufps_window_class";
+    const auto title_wide = L"ufps window";
+
+    wc_ = ::WNDCLASSW{
         .style = CS_HREDRAW | CS_VREDRAW | CS_OWNDC,
         .lpfnWndProc = window_proc,
         .cbClsExtra = {},
         .cbWndExtra = {},
-        .hInstance = ::GetModuleHandleA(nullptr),
+        .hInstance = ::GetModuleHandleW(nullptr),
         .hIcon = {},
         .hCursor{},
         .hbrBackground = {},
         .lpszMenuName = {},
-        .lpszClassName = "window class"};
+        .lpszClassName = class_name};
 
-    ensure(::RegisterClassA(&wc_) != 0, "failed to register class");
+    ensure(::RegisterClassW(&wc_) != 0, "\u043d\u0435 \u0443\u0434\u0430\u043b\u043e\u0441\u044c \u0437\u0430\u0440\u0435\u0433\u0438\u0441\u0442\u0440\u0438\u0440\u043e\u0432\u0430\u0442\u044c \u043a\u043b\u0430\u0441\u0441");
 
     auto rect = ::RECT{.left = {}, .top = {}, .right = static_cast<int>(width), .bottom = static_cast<int>(height)};
 
-    ensure(::AdjustWindowRect(&rect, WS_OVERLAPPEDWINDOW, false) != 0, "failed to resize window");
+    ensure(::AdjustWindowRect(&rect, WS_OVERLAPPEDWINDOW, false) != 0, "\u043d\u0435 \u0443\u0434\u0430\u043b\u043e\u0441\u044c \u0438\u0437\u043c\u0435\u043d\u0438\u0442\u044c \u0440\u0430\u0437\u043c\u0435\u0440 \u043e\u043a\u043d\u0430");
 
-    window_ = {
-        ::CreateWindowExA(
+    window_ = ufps::AutoRelease<HWND>{
+        ::CreateWindowExW(
             0,
             wc_.lpszClassName,
-            "ufps window",
+            title_wide,
             WS_OVERLAPPEDWINDOW,
             x,
             y,
@@ -310,8 +316,16 @@ Window::Window(
     ::UpdateWindow(window_);
 
     ::GetWindowRect(window_, &rect);
-    ::ClipCursor(&rect);
-    ::ShowCursor(FALSE);
+    if (mouse_locked_)
+    {
+        ::ClipCursor(&rect);
+        ::ShowCursor(FALSE);
+    }
+    else
+    {
+        ::ClipCursor(nullptr);
+        ::ShowCursor(TRUE);
+    }
 
     const auto rid = ::RAWINPUTDEVICE{
         .usUsagePage = HID_USAGE_PAGE_GENERIC,
@@ -319,7 +333,7 @@ Window::Window(
         .dwFlags = RIDEV_INPUTSINK,
         .hwndTarget = window_};
 
-    ensure(::RegisterRawInputDevices(&rid, 1, sizeof(rid)) == TRUE, "failed to register input device");
+    ensure(::RegisterRawInputDevices(&rid, 1, sizeof(rid)) == TRUE, "\u043d\u0435 \u0443\u0434\u0430\u043b\u043e\u0441\u044c \u0437\u0430\u0440\u0435\u0433\u0438\u0441\u0442\u0440\u0438\u0440\u043e\u0432\u0430\u0442\u044c \u0443\u0441\u0442\u0440\u043e\u0439\u0441\u0442\u0432\u043e \u0432\u0432\u043e\u0434\u0430");
 
     resolve_wgl_functions(wc_.hInstance);
     init_opengl(dc_);
@@ -340,9 +354,8 @@ Window::Window(
     const auto *renderer = ::glGetString(GL_RENDERER);
     const auto *version = ::glGetString(GL_VERSION);
 
-    // Логируем параметры нового окна, включая DPI, размеры и информацию об OpenGL
     log::info(
-        "создано окно (dpi: {}) {} {} {} {} {} {}",
+        "\u0441\u043e\u0437\u0434\u0430\u043d\u043e \u043d\u043e\u0432\u043e\u0435 \u043e\u043a\u043d\u043e (dpi: {}) {} {} {} {} {} {}",
         ::GetDpiForWindow(window_),
         width_,
         height_,
@@ -422,7 +435,8 @@ auto Window::window_height() const -> std::uint32_t
 
 auto Window::set_title(const std::string &title) const -> void
 {
-    ::SetWindowTextA(window_, title.c_str());
+    const auto title_wide = text_widen(title);
+    ::SetWindowTextW(window_, title_wide.c_str());
 }
 
 auto Window::mode() const -> WindowMode
@@ -438,7 +452,7 @@ auto Window::set_mode(WindowMode mode) -> void
     mode_ = mode;
 
     const auto current_style = ::GetWindowLong(window_, GWL_STYLE);
-    ensure(current_style != 0, "could not get window style");
+    ensure(current_style != 0, "\u043d\u0435 \u0443\u0434\u0430\u043b\u043e\u0441\u044c \u043f\u043e\u043b\u0443\u0447\u0438\u0442\u044c \u0441\u0442\u0438\u043b\u044c \u043e\u043a\u043d\u0430");
 
     if (current_style & WS_OVERLAPPEDWINDOW)
     {
@@ -448,10 +462,10 @@ auto Window::set_mode(WindowMode mode) -> void
         }
 
         const auto mi = get_monitor_info(window_);
-        ensure(::GetWindowPlacement(window_, &wp_prev) != 0, "could not get window placement");
+        ensure(::GetWindowPlacement(window_, &wp_prev) != 0, "\u043d\u0435 \u0443\u0434\u0430\u043b\u043e\u0441\u044c \u043f\u043e\u043b\u0443\u0447\u0438\u0442\u044c \u0440\u0430\u0441\u043f\u043e\u043b\u043e\u0436\u0435\u043d\u0438\u0435 \u043e\u043a\u043d\u0430");
         ensure(
             ::SetWindowLong(window_, GWL_STYLE, current_style & ~WS_OVERLAPPEDWINDOW) != 0,
-            "could not set window style");
+            "\u043d\u0435 \u0443\u0434\u0430\u043b\u043e\u0441\u044c \u0443\u0441\u0442\u0430\u043d\u043e\u0432\u0438\u0442\u044c \u0441\u0442\u0438\u043b\u044c \u043e\u043a\u043d\u0430");
         ensure(
             ::SetWindowPos(
                 window_,
@@ -461,7 +475,7 @@ auto Window::set_mode(WindowMode mode) -> void
                 mi.rcMonitor.right - mi.rcMonitor.left,
                 mi.rcMonitor.bottom - mi.rcMonitor.top,
                 SWP_NOOWNERZORDER | SWP_FRAMECHANGED) != 0,
-            "failed to set window pos");
+            "\u043d\u0435 \u0443\u0434\u0430\u043b\u043e\u0441\u044c \u0443\u0441\u0442\u0430\u043d\u043e\u0432\u0438\u0442\u044c \u043f\u043e\u0437\u0438\u0446\u0438\u044e \u043e\u043a\u043d\u0430");
     }
     else
     {
@@ -472,8 +486,10 @@ auto Window::set_mode(WindowMode mode) -> void
 
         ensure(
             ::SetWindowLong(window_, GWL_STYLE, current_style | WS_OVERLAPPEDWINDOW) != 0,
-            "failed to set window style");
-        ensure(::SetWindowPlacement(window_, &wp_prev) != 0, "failed to set window placement");
+            "\u043d\u0435 \u0443\u0434\u0430\u043b\u043e\u0441\u044c \u0443\u0441\u0442\u0430\u043d\u043e\u0432\u0438\u0442\u044c \u0441\u0442\u0438\u043b\u044c \u043e\u043a\u043d\u0430");
+        ensure(
+            ::SetWindowPlacement(window_, &wp_prev) != 0,
+            "\u043d\u0435 \u0443\u0434\u0430\u043b\u043e\u0441\u044c \u0443\u0441\u0442\u0430\u043d\u043e\u0432\u0438\u0442\u044c \u0440\u0430\u0441\u043f\u043e\u043b\u043e\u0436\u0435\u043d\u0438\u0435 \u043e\u043a\u043d\u0430");
         ensure(
             ::SetWindowPos(
                 window_,
@@ -483,7 +499,7 @@ auto Window::set_mode(WindowMode mode) -> void
                 0,
                 0,
                 SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER | SWP_NOOWNERZORDER | SWP_FRAMECHANGED) != 0,
-            "failed to set window pos");
+            "\u043d\u0435 \u0443\u0434\u0430\u043b\u043e\u0441\u044c \u0443\u0441\u0442\u0430\u043d\u043e\u0432\u0438\u0442\u044c \u043f\u043e\u0437\u0438\u0446\u0438\u044e \u043e\u043a\u043d\u0430");
     }
 }
 

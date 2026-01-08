@@ -22,8 +22,12 @@ Buffer::Buffer(std::size_t size, std::string_view name)
 
 auto Buffer::write(DataBufferView data, std::size_t offset) const -> void
 {
-    expect(size_ >= data.size_bytes() + offset, "buffer too small");
-    ::glNamedBufferSubData(buffer_, offset, data.size(), data.data());
+    expect(size_ >= data.size_bytes() + offset, "\u0431\u0443\u0444\u0435\u0440 \u0441\u043b\u0438\u0448\u043a\u043e\u043c \u043c\u0430\u043b");
+    ::glNamedBufferSubData(
+        buffer_,
+        static_cast<::GLintptr>(offset),
+        static_cast<::GLsizeiptr>(data.size_bytes()),
+        data.data());
 }
 
 auto Buffer::native_handle() const -> ::GLuint

@@ -1,6 +1,6 @@
-#include <_mingw_mac.h>
 #include <numbers>
 #include <ranges>
+#include <span>
 #include <string_view>
 #include <unordered_map>
 #include <variant>
@@ -8,6 +8,7 @@
 #include <windows.h>
 
 #include "config.h"
+#include "core/scene.h"
 #include "events/key.h"
 #include "events/key_event.h"
 #include "graphics/colour.h"
@@ -16,10 +17,14 @@
 #include "graphics/mesh_data.h"
 #include "graphics/mesh_manager.h"
 #include "graphics/renderer.h"
-#include "graphics/scene.h"
+#include "graphics/sampler.h"
+#include "graphics/texture.h"
+#include "graphics/utils.h"
 #include "graphics/vertex_data.h"
 #include "graphics/window.h"
 #include "maths/vector3.h"
+#include "resources/file_resource_loader.h"
+#include "utils/data_buffer.h"
 #include "utils/formatter.h"
 #include "utils/log.h"
 #include "utils/system_info.h"
@@ -28,9 +33,18 @@ using namespace std::literals;
 
 namespace
 {
+
+template <class... Args>
+auto vertices(Args &&...args) -> std::vector<ufps::VertexData>
+{
+    return std::views::zip_transform(
+               []<class... A>(A &&...a) { return ufps::VertexData{std::forward<A>(a)...}; },
+               std::forward<Args>(args)...) |
+           std::ranges::to<std::vector>();
+}
+
 auto cube() -> ufps::MeshData
 {
-    // Строим куб из 24 вершин с нормализованными координатами и набором индексов для треугольников
     const ufps::Vector3 positions[] = {
         {-1.0f, -1.0f, 1.0f}, {1.0f, -1.0f, 1.0f},   {1.0f, 1.0f, 1.0f},   {-1.0f, 1.0f, 1.0f},   {-1.0f, -1.0f, -1.0f},
         {1.0f, -1.0f, -1.0f}, {1.0f, 1.0f, -1.0f},   {-1.0f, 1.0f, -1.0f}, {-1.0f, -1.0f, -1.0f}, {-1.0f, -1.0f, 1.0f},
@@ -39,21 +53,22 @@ auto cube() -> ufps::MeshData
         {-1.0f, -1.0f, 1.0f}, {-1.0f, -1.0f, -1.0f}, {1.0f, -1.0f, -1.0f}, {1.0f, -1.0f, 1.0f},
     };
 
+    const ufps::UV uvs[] = {
+        {0.0f, 0.0f}, {1.0f, 0.0f}, {1.0f, 1.0f}, {0.0f, 1.0f}, {0.0f, 0.0f}, {1.0f, 0.0f}, {1.0f, 1.0f}, {0.0f, 1.0f},
+        {0.0f, 0.0f}, {1.0f, 0.0f}, {1.0f, 1.0f}, {0.0f, 1.0f}, {0.0f, 0.0f}, {1.0f, 0.0f}, {1.0f, 1.0f}, {0.0f, 1.0f},
+        {0.0f, 0.0f}, {1.0f, 0.0f}, {1.0f, 1.0f}, {0.0f, 1.0f}, {0.0f, 0.0f}, {1.0f, 0.0f}, {1.0f, 1.0f}, {0.0f, 1.0f},
+    };
+
     auto indices = std::vector<std::uint32_t>{
         0,  1,  2,  2,  3,  0,  4,  5,  6,  6,  7,  4,  8,  9,  10, 10, 11, 8,
         12, 13, 14, 14, 15, 12, 16, 17, 18, 18, 19, 16, 20, 21, 22, 22, 23, 20,
     };
 
-    // Возвращаем структуру MeshData с полигонами и вершинами в нужном формате
-    return {
-        .vertices = positions | std::views::transform([](const auto &e) { return ufps::VertexData{.position = e}; }) |
-                    std::ranges::to<std::vector>(),
-        .indices = std::move(indices)};
+    return {.vertices = vertices(positions, uvs), .indices = std::move(indices)};
 }
 
 auto walk_direction(std::unordered_map<ufps::Key, bool> &key_state, const ufps::Camera &camera) -> ufps::Vector3
 {
-    // Вычисляем направление движения камеры на основе нажатых клавиш WASD и QE (по высоте)
     auto direction = ufps::Vector3{};
 
     if (key_state[ufps::Key::W])
@@ -86,7 +101,6 @@ auto walk_direction(std::unordered_map<ufps::Key, bool> &key_state, const ufps::
         direction -= camera.up();
     }
 
-    // Нормализуем результат и множим на фиксированную скорость
     constexpr auto speed = 0.5f;
     return ufps::Vector3::normalise(direction) * speed;
 }
@@ -95,16 +109,23 @@ auto walk_direction(std::unordered_map<ufps::Key, bool> &key_state, const ufps::
 
 int main()
 {
-    // Точка входа: инициализируем COM, логгер и создаём необходимые менеджеры для сцены и рендеринга
-    // Daz_Da_Cat: First stream done.
-    // Daz_Da_Cat: You can't handle the Daz!
     ::CoInitializeEx(nullptr, COINIT_MULTITHREADED);
 
-    ufps::log::info("версия μfps: {}.{}.{}", ufps::version::major, ufps::version::minor, ufps::version::patch);
+    ufps::log::info("\u0432\u0435\u0440\u0441\u0438\u044f ufps: {}.{}.{}", ufps::version::major, ufps::version::minor, ufps::version::patch);
     ufps::log::info("{}", ufps::system_info());
 
-    auto window = ufps::Window{ufps::WindowMode::WINDOWED, 1920u, 1080u, 1920u, 0u};
+    auto window = ufps::Window{ufps::WindowMode::WINDOWED, 1920u, 1080u, 1920u, 0u, false};
     auto running = true;
+
+    auto resource_loader = ufps::FileResourceLoader{"assets"};
+    const auto diamond_floor_albedo_data = resource_loader.load_data_buffer("textures\\diamond_floor_albedo.png");
+    const auto diamond_floor_albedo = ufps::load_texture(diamond_floor_albedo_data);
+    const auto sampler = ufps::Sampler{
+        ufps::FilterType::LINEAR,
+        ufps::FilterType::LINEAR,
+        "\u0430\u043b\u043c\u0430\u0437\u043d\u044b\u0439_\u043f\u043e\u043b_\u0441\u0430\u043c\u043f\u043b\u0435\u0440"};
+    const auto diamond_floor_texture =
+        ufps::Texture{diamond_floor_albedo, "\u0430\u043b\u043c\u0430\u0437\u043d\u044b\u0439_\u043f\u043e\u043b", sampler};
 
     auto mesh_manager = ufps::MeshManager{};
     auto material_manager = ufps::MaterialManager{};
@@ -130,17 +151,17 @@ int main()
              static_cast<float>(window.render_height()),
              0.1f,
              1000.0f},
-    };
+        .the_one_texture = diamond_floor_texture};
 
     scene.entities.push_back({
-        .name = "cube1",
+        .name = "\u041a\u0443\u04311",
         .mesh_view = mesh_manager.load(cube()),
         .transform = {{10.0f, 0.0f, -10.0f}, {5.0f}, {}},
         .material_key = material_key_red,
     });
 
     scene.entities.push_back({
-        .name = "cube2",
+        .name = "\u041a\u0443\u04312",
         .mesh_view = mesh_manager.load(cube()),
         .transform = {{-10.0f, 0.0f, -10.0f}, {5.0f}, {}},
         .material_key = material_key_green,
@@ -165,12 +186,11 @@ int main()
                     {
                         if (arg.key() == ufps::Key::ESC)
                         {
-                            ufps::log::info("stopping");
+                            ufps::log::info("\u0432\u044b\u0445\u043e\u0434");
                             running = false;
                         }
                         if (arg == ufps::KeyEvent{ufps::Key::F1, ufps::KeyState::DOWN})
                         {
-                            // Переключение режима отладки, в котором рендерится ImGui-интерфейс
                             debug_mode = !debug_mode;
                         }
                         else
